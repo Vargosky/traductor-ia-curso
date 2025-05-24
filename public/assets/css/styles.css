@@ -52,13 +52,13 @@ body{
     border-radius: 0.8rem;
     background-color: #fafafa;
     box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
-    display: flex;
+    /* display: flex; */
     flex-direction: column;
     gap: 1rem;
 } 
 
 .chat__message{
-    max-width: 75%;
+    max-width: auto;
     padding:  1.5rem;
     font-size: 1.8rem;
     border-radius: 1rem;
@@ -66,19 +66,21 @@ body{
 }
 
 .chat__message--user{
-    align-items: flex-end;
+    /* align-items: flex-end; */
     background-color: #007bff;
     color: white;
     text-align: right;
-    justify-content: flex-end;
+    /* justify-content: flex-end; */
+    margin-left: auto;
 }
 
 .chat__message--bot{
-    align-items: flex-start;
+    /* align-items: flex-start; */
     background-color: #e0e0e0;
     color: #333;
     text-align: left;
-    justify-content: flex-start;
+    /* justify-content: flex-start; */
+    margin-right: auto;
 }
 
 .chat__input-group{
