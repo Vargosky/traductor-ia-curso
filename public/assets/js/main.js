@@ -16,7 +16,7 @@ translateButton.addEventListener("click", async () => {
     messageContainer.scrollTop = messageContainer.scrollHeight;
 
     try {
-        const response = await fetch("/api/traducir", {
+        const response = await fetch("/api/traducirLLM", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json" 
