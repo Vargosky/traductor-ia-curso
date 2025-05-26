@@ -1,7 +1,8 @@
 //importar dependencias
 import express from "express";
-import dotenv from  "dotenv";
+import dotenv from "dotenv";
 import OpenAI from "openai";
+import { promptSystem } from "./public/assets/prompt/asistente.js"
 
 
 
@@ -19,7 +20,7 @@ app.use("/", express.static("public"));
 
 // middleware
 app.use(express.json());
-app.use(express.urlencoded({extended:true}))
+app.use(express.urlencoded({ extended: true }))
 
 //instancia de openai y pasar el apikey
 // const openai = new OpenAI({
@@ -37,66 +38,96 @@ const openai = new OpenAI({
 app.post("/api/traducir", async (req, res) => {
     const { text, targetLang } = req.body;
 
-    const promptSystem = {
-        rol: "Eres un traductor profesional",
-        mision: "Tu misión es traducir de forma precisa la frase que se te proporciona.",
-        restriccion: "Solamente debes responder la traducción, otra interacción está prohibida."
-    };
 
-    const promptUsuario = `Traduce el siguiente texto: "${text}" al ${targetLang}`;
 
     try {
+        const promptSystemString = `
+${promptSystem.rol}
+${promptSystem.mision}
+Restricciones: ${promptSystem.restricciones.join(" ")}
+Información del negocio:
+- Nombre: ${promptSystem.informacion_negocio.nombre}
+- Ubicación: ${promptSystem.informacion_negocio.ubicacion}
+- Horario:
+  * Lunes a sábado: ${promptSystem.informacion_negocio.horario.lunes_a_sabado}
+  * Domingo: ${promptSystem.informacion_negocio.horario.domingo}
+- Contacto:
+  * Teléfono: ${promptSystem.informacion_negocio.contacto.telefono}
+  * Correo: ${promptSystem.informacion_negocio.contacto.correo}
+  * Instagram: ${promptSystem.informacion_negocio.contacto.instagram}
+- Servicios: ${promptSystem.informacion_negocio.servicios.join(" ")}
+- Formas de pago: ${promptSystem.informacion_negocio.formas_pago.join(", ")}
+Tono: ${promptSystem.comportamiento.tono}
+Objetivo: ${promptSystem.comportamiento.objetivo}
+`.trim();
+
         const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "qwen/qwen3-8b", // Modelo cargado en LM Studio
             messages: [
-                { role: "system", content: promptSystem.rol },
-                { role: "system", content: promptSystem.mision + " " + promptSystem.restriccion },
+                { role: "system", content: promptSystemString },
                 { role: "user", content: promptUsuario }
             ]
         });
 
-        const translatedText = completion.choices[0].message.content;
-        return res.status(200).json({ translatedText });
+        const responseText = completion.choices[0].message.content;
+        const cleanText = responseText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+        return res.status(200).json({ respuesta: cleanText });
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Error al traducir" });
+        console.error("Error al consultar el asistente:", error);
+        return res.status(500).json({ error: "Error al generar respuesta con el LLM local" });
     }
+
 });
 
-app.post("/api/traducirLLM", async (req, res) => {
-    const { text, targetLang } = req.body;
+app.post("/api/asistenteLLM", async (req, res) => {
+    const { promptUsuario } = req.body;
 
-    const promptSystem = {
-        rol: "Eres un traductor profesional",
-        mision: "Tu misión es traducir de forma precisa la frase que se te proporciona.",
-        restriccion: "Solamente debes responder con la traducción. No expliques, no pienses en voz alta, no incluyas etiquetas como <think> ni otras reflexiones. Solo responde con el texto traducido, nada más."
-    };
-
-    const promptUsuario = `Traduce el siguiente texto: "${text}" al ${targetLang}`;
 
     try {
+        const promptSystemString = `
+${promptSystem.rol}
+${promptSystem.mision}
+Restricciones: ${promptSystem.restricciones.join(" ")}
+Información del negocio:
+- Nombre: ${promptSystem.informacion_negocio.nombre}
+- Ubicación: ${promptSystem.informacion_negocio.ubicacion}
+- Horario:
+  * Lunes a sábado: ${promptSystem.informacion_negocio.horario.lunes_a_sabado}
+  * Domingo: ${promptSystem.informacion_negocio.horario.domingo}
+- Contacto:
+  * Teléfono: ${promptSystem.informacion_negocio.contacto.telefono}
+  * Correo: ${promptSystem.informacion_negocio.contacto.correo}
+  * Instagram: ${promptSystem.informacion_negocio.contacto.instagram}
+- Servicios: ${promptSystem.informacion_negocio.servicios.join(" ")}
+- Formas de pago: ${promptSystem.informacion_negocio.formas_pago.join(", ")}
+Tono: ${promptSystem.comportamiento.tono}
+Objetivo: ${promptSystem.comportamiento.objetivo}
+`.trim();
+
         const completion = await openai.chat.completions.create({
-            model: "qwen/qwen3-8b", // el modelo que aparece cargado en LM Studio
+            model: "qwen/qwen3-8b", // o el modelo que uses
             messages: [
-                { role: "system", content: `${promptSystem.rol} ${promptSystem.mision} ${promptSystem.restriccion}` },
+                { role: "system", content: promptSystemString },
                 { role: "user", content: promptUsuario }
             ]
         });
 
-        const translatedText = completion.choices[0].message.content;
-        const cleanText = translatedText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-        return res.status(200).json({ translatedText: cleanText });
+        const responseText = completion.choices[0].message.content;
+        const cleanText = responseText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+
+        return res.status(200).json({ respuesta: cleanText });
 
     } catch (error) {
-        console.error("Error al traducir:", error);
-        return res.status(500).json({ error: "Error al traducir con LLM local" });
+        console.error("Error al consultar el asistente:", error);
+        return res.status(500).json({ error: "Error al generar respuesta con el LLM local" });
     }
 });
+
 
 
 
 //servir el backked
-app.listen(PORT, ()=>{
-    console.log("Servidor corriendo correctamente en http://localhost:"+PORT);
+app.listen(PORT, () => {
+    console.log("Servidor corriendo correctamente en http://localhost:" + PORT);
 })
