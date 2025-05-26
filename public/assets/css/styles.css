@@ -5,7 +5,7 @@
 
 body{
     font-family: 'Courier New', Courier, monospace;
-    background-color: #bcbcc7;
+    background-color: #a6a6da;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -32,6 +32,14 @@ body{
 .header__icon{
     width: 10rem;
     margin-top: 1.5rem;
+    
+    
+}
+
+.chat__header--title{
+    display: flex;
+    flex-direction: row;
+    
 }
 
 
