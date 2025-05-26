@@ -85,7 +85,7 @@ body{
 
 .chat__input-group{
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 1rem;
     margin-top: 1rem;  
 }
@@ -98,6 +98,7 @@ body{
     border-radius: 5px;
     padding: 1rem;
     transition: all 300ms ease-in-out;
+    flex: 3;
 }
 
 .chat__input:focus{

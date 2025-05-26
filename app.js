@@ -37,62 +37,174 @@ const openai = new OpenAI({
 app.post("/api/traducir", async (req, res) => {
     const { text, targetLang } = req.body;
 
+const promptSystem = {
+    rol: "Eres un asistente virtual del Supermercado Santa Filomena, un negocio familiar ubicado en Valparaíso, Chile.",
+    mision: "Tu misión es atender a los clientes del supermercado de forma amable, clara y útil, entregando información sobre productos, servicios, promociones, ubicación y contacto.",
+    restricciones: [
+        "No debes inventar información.",
+        "No respondas preguntas ajenas al supermercado.",
+        "No uses lenguaje informal o poco profesional.",
+        "Evita responder con más de lo necesario: sé directo pero cordial.",
+        "Prioriza la ayuda a personas mayores o con necesidades especiales, usando un tono paciente."
+    ],
+    informacion_negocio: {
+        nombre: "Supermercado Santa Filomena",
+        ubicacion: "Calle Prat 1234, Cerro Barón, Valparaíso, Chile",
+        horario: {
+            lunes_a_sabado: "08:00 a 21:00",
+            domingo: "09:00 a 14:00"
+        },
+        contacto: {
+            telefono: "+56 32 234 5678",
+            correo: "contacto@santafilomena.cl",
+            instagram: "@santafilomena.super"
+        },
+        servicios: [
+            "Venta de abarrotes, frutas y verduras frescas, lácteos, artículos de limpieza y productos congelados.",
+            "Delivery a domicilio en Valparaíso por compras sobre $15.000.",
+            "Promociones semanales y programa de cliente frecuente.",
+            "Atención preferencial para adultos mayores."
+        ],
+        formas_pago: [
+            "Efectivo",
+            "Tarjetas de débito y crédito",
+            "Transferencia bancaria",
+            "Pago con código QR"
+        ]
+    },
+    comportamiento: {
+        tono: "Amable, profesional, paciente y claro.",
+        objetivo: "Ayudar a los clientes a resolver dudas rápidamente y con precisión."
+    }
+};
+
+
+   
+
+try {
+    const promptSystemString = `
+${promptSystem.rol}
+${promptSystem.mision}
+Restricciones: ${promptSystem.restricciones.join(" ")}
+Información del negocio:
+- Nombre: ${promptSystem.informacion_negocio.nombre}
+- Ubicación: ${promptSystem.informacion_negocio.ubicacion}
+- Horario:
+  * Lunes a sábado: ${promptSystem.informacion_negocio.horario.lunes_a_sabado}
+  * Domingo: ${promptSystem.informacion_negocio.horario.domingo}
+- Contacto:
+  * Teléfono: ${promptSystem.informacion_negocio.contacto.telefono}
+  * Correo: ${promptSystem.informacion_negocio.contacto.correo}
+  * Instagram: ${promptSystem.informacion_negocio.contacto.instagram}
+- Servicios: ${promptSystem.informacion_negocio.servicios.join(" ")}
+- Formas de pago: ${promptSystem.informacion_negocio.formas_pago.join(", ")}
+Tono: ${promptSystem.comportamiento.tono}
+Objetivo: ${promptSystem.comportamiento.objetivo}
+`.trim();
+
+    const completion = await openai.chat.completions.create({
+        model: "qwen/qwen3-8b", // Modelo cargado en LM Studio
+        messages: [
+            { role: "system", content: promptSystemString },
+            { role: "user", content: promptUsuario }
+        ]
+    });
+
+    const responseText = completion.choices[0].message.content;
+    const cleanText = responseText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+    return res.status(200).json({ respuesta: cleanText });
+
+} catch (error) {
+    console.error("Error al consultar el asistente:", error);
+    return res.status(500).json({ error: "Error al generar respuesta con el LLM local" });
+}
+
+});
+
+app.post("/api/asistenteLLM", async (req, res) => {
+    const { promptUsuario } = req.body;
+
     const promptSystem = {
-        rol: "Eres un traductor profesional",
-        mision: "Tu misión es traducir de forma precisa la frase que se te proporciona.",
-        restriccion: "Solamente debes responder la traducción, otra interacción está prohibida."
+        rol: "Eres un asistente virtual del Supermercado Santa Filomena, un negocio familiar ubicado en Valparaíso, Chile.",
+        mision: "Tu misión es atender a los clientes del supermercado de forma amable, clara y útil, entregando información sobre productos, servicios, promociones, ubicación y contacto.",
+        restricciones: [
+            "No debes inventar información.",
+            "No respondas preguntas ajenas al supermercado.",
+            "No uses lenguaje informal o poco profesional.",
+            "Evita responder con más de lo necesario: sé directo pero cordial.",
+            "Prioriza la ayuda a personas mayores o con necesidades especiales, usando un tono paciente."
+        ],
+        informacion_negocio: {
+            nombre: "Supermercado Santa Filomena",
+            ubicacion: "Calle Prat 1234, Cerro Barón, Valparaíso, Chile",
+            horario: {
+                lunes_a_sabado: "08:00 a 21:00",
+                domingo: "09:00 a 14:00"
+            },
+            contacto: {
+                telefono: "+56 32 234 5678",
+                correo: "contacto@santafilomena.cl",
+                instagram: "@santafilomena.super"
+            },
+            servicios: [
+                "Venta de abarrotes, frutas y verduras frescas, lácteos, artículos de limpieza y productos congelados.",
+                "Delivery a domicilio en Valparaíso por compras sobre $15.000.",
+                "Promociones semanales y programa de cliente frecuente.",
+                "Atención preferencial para adultos mayores."
+            ],
+            formas_pago: [
+                "Efectivo",
+                "Tarjetas de débito y crédito",
+                "Transferencia bancaria",
+                "Pago con código QR"
+            ]
+        },
+        comportamiento: {
+            tono: "Amable, profesional, paciente y claro.",
+            objetivo: "Ayudar a los clientes a resolver dudas rápidamente y con precisión."
+        }
     };
 
-    const promptUsuario = `Traduce el siguiente texto: "${text}" al ${targetLang}`;
-
     try {
+        const promptSystemString = `
+${promptSystem.rol}
+${promptSystem.mision}
+Restricciones: ${promptSystem.restricciones.join(" ")}
+Información del negocio:
+- Nombre: ${promptSystem.informacion_negocio.nombre}
+- Ubicación: ${promptSystem.informacion_negocio.ubicacion}
+- Horario:
+  * Lunes a sábado: ${promptSystem.informacion_negocio.horario.lunes_a_sabado}
+  * Domingo: ${promptSystem.informacion_negocio.horario.domingo}
+- Contacto:
+  * Teléfono: ${promptSystem.informacion_negocio.contacto.telefono}
+  * Correo: ${promptSystem.informacion_negocio.contacto.correo}
+  * Instagram: ${promptSystem.informacion_negocio.contacto.instagram}
+- Servicios: ${promptSystem.informacion_negocio.servicios.join(" ")}
+- Formas de pago: ${promptSystem.informacion_negocio.formas_pago.join(", ")}
+Tono: ${promptSystem.comportamiento.tono}
+Objetivo: ${promptSystem.comportamiento.objetivo}
+`.trim();
+
         const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "qwen/qwen3-8b", // o el modelo que uses
             messages: [
-                { role: "system", content: promptSystem.rol },
-                { role: "system", content: promptSystem.mision + " " + promptSystem.restriccion },
+                { role: "system", content: promptSystemString },
                 { role: "user", content: promptUsuario }
             ]
         });
 
-        const translatedText = completion.choices[0].message.content;
-        return res.status(200).json({ translatedText });
+        const responseText = completion.choices[0].message.content;
+        const cleanText = responseText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+
+        return res.status(200).json({ respuesta: cleanText });
 
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ error: "Error al traducir" });
+        console.error("Error al consultar el asistente:", error);
+        return res.status(500).json({ error: "Error al generar respuesta con el LLM local" });
     }
 });
 
-app.post("/api/traducirLLM", async (req, res) => {
-    const { text, targetLang } = req.body;
-
-    const promptSystem = {
-        rol: "Eres un traductor profesional",
-        mision: "Tu misión es traducir de forma precisa la frase que se te proporciona.",
-        restriccion: "Solamente debes responder con la traducción. No expliques, no pienses en voz alta, no incluyas etiquetas como <think> ni otras reflexiones. Solo responde con el texto traducido, nada más."
-    };
-
-    const promptUsuario = `Traduce el siguiente texto: "${text}" al ${targetLang}`;
-
-    try {
-        const completion = await openai.chat.completions.create({
-            model: "qwen/qwen3-8b", // el modelo que aparece cargado en LM Studio
-            messages: [
-                { role: "system", content: `${promptSystem.rol} ${promptSystem.mision} ${promptSystem.restriccion}` },
-                { role: "user", content: promptUsuario }
-            ]
-        });
-
-        const translatedText = completion.choices[0].message.content;
-        const cleanText = translatedText.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-        return res.status(200).json({ translatedText: cleanText });
-
-    } catch (error) {
-        console.error("Error al traducir:", error);
-        return res.status(500).json({ error: "Error al traducir con LLM local" });
-    }
-});
 
 
 
